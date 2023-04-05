@@ -103,14 +103,6 @@ echo -e "\nSetting up Git..."
 
 git config --global user.email "hridaya@pixelos.net"
 git config --global user.name "hridaya"
-
-git config --global alias.cp 'cherry-pick'
-git config --global alias.c 'commit'
-git config --global alias.f 'fetch'
-git config --global alias.m 'merge'
-git config --global alias.rb 'rebase'
-git config --global alias.rs 'reset'
-git config --global alias.ck 'checkout'
 git config --global credential.helper 'cache --timeout=99999999'
 git config --global core.editor "nano"
 
