@@ -101,8 +101,8 @@ rm -rf android-udev-rules
 # Configure git
 echo -e "\nSetting up Git..."
 
-git config --global user.email "karan@pixelos.net"
-git config --global user.name "Karan Parashar"
+git config --global user.email "hridaya@pixelos.net"
+git config --global user.name "hridaya"
 
 git config --global alias.cp 'cherry-pick'
 git config --global alias.c 'commit'
