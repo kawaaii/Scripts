@@ -108,9 +108,3 @@ git config --global core.editor "nano"
 
 # Optimize boot time, it takes the longest time while booting
 sudo systemctl disable NetworkManager-wait-online.service
-
-# oh-my-bash
-echo -e "\nSetup oh-my-bash..."
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
-echo "#oh-my-bash" >> ~/.bashrc
-echo DISABLE_AUTO_UPDATE=true >> ~/.bashrc
