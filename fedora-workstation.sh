@@ -108,3 +108,9 @@ git config --global core.editor "nano"
 
 # Optimize boot time, it takes the longest time while booting
 sudo systemctl disable NetworkManager-wait-online.service
+
+# Install fish shell
+sudo dnf install -y fish
+# Switch to fish shell
+echo /usr/local/bin/fish | sudo tee -a /etc/shells
+chsh -s /usr/local/bin/fish
