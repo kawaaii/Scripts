@@ -114,3 +114,6 @@ sudo dnf install -y fish
 # Switch to fish shell
 echo /usr/local/bin/fish | sudo tee -a /etc/shells
 chsh -s /usr/local/bin/fish
+
+# Install lxterminal
+sudo dnf install -y lxterminal
