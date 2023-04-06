@@ -110,10 +110,13 @@ git config --global core.editor "nano"
 sudo systemctl disable NetworkManager-wait-online.service
 
 # Install fish shell
+echo -e "\nInstalling fish shell..."
 sudo dnf install -y fish
 # Switch to fish shell
+echo -e "\nSetting up fish shell..."
 echo /usr/local/bin/fish | sudo tee -a /etc/shells
 chsh -s /usr/local/bin/fish
 
 # Install lxterminal
+echo -e "\nInstalling lxterminal..."
 sudo dnf install -y lxterminal
