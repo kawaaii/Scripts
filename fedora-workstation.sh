@@ -120,3 +120,7 @@ chsh -s /usr/local/bin/fish
 # Install lxterminal
 echo -e "\nInstalling lxterminal..."
 sudo dnf install -y lxterminal
+
+# Install ripgrep
+echo -e "\nInstalling ripgrep"
+sudo dnf install -y ripgrep
