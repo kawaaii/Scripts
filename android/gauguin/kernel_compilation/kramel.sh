@@ -14,23 +14,23 @@ YELLOW="\033[1;33m"
 CYAN="\033[0;36m"
 
 # User details
-USER='Tashar'
-HOST='Endeavour'
+USER='hridaya'
+HOST='wsl'
 TOKEN='ADD YOUR TOKEN HERE'
 CHATID='ADD YOUR CHATID HERE'
 BOT_MSG_URL="https://api.telegram.org/bot${TOKEN}/sendMessage"
 BOT_BUILD_URL="https://api.telegram.org/bot${TOKEN}/sendDocument"
-DEVICE='Mi A2 / 6X'
-CODENAME='wayne'
-CODENAME2='jasmine'
+DEVICE='Redmi Note 9 Pro 5G'
+CODENAME='gauguin'
 PROCS="$(nproc --all)"
+DFCF="gauguin_defconfig"
 
 # Paths
 KERNEL_DIR="${PWD}"
-TOOLCHAIN="${KERNEL_DIR}/../toolchains"
-GZIP_DIR="${TOOLCHAIN}//neutron-gzip"
+TOOLCHAIN="${HOME}/toolchains"
+GZIP_DIR="${TOOLCHAIN}/neutron-gzip"
 COREUTILS_DIR="${TOOLCHAIN}/neutron-coreutils"
-ZIP_DIR="${KERNEL_DIR}/../4.19-ak3"
+ZIP_DIR="${HOME}/ak3"
 
 ## Go to kernel directory
 cd "${KERNEL_DIR}" || exit 1
@@ -44,13 +44,6 @@ Usage ./kramel.sh [ARG]
 Arguments:
  --clang		sets clang as the compiler
  --gcc			sets gcc as the compiler
- --newcam		sets newcam as the camera library
- --oldcam		sets oldcam as the camera library
- --osscam		sets osscam as the camera library
- --qpnp			sets qpnp as the haptics driver
- --qti			sets qti as the haptics driver
- --dynamic		sets retrofit dynamic partition
- --non-dynamic		sets regular partition type
  --thin-lto		enables thin LTO
  --full-lto		enables full LTO
  --non-lto		disables LTO
@@ -68,6 +61,18 @@ tg_post_msg() {
 }
 
 # A function to send file(s) via Telegram's BOT api
+tg_post_log() {
+	#Post MD5Checksum alongwith for easeness
+	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
+
+	#Show the Checksum alongwith caption
+	curl --progress-bar -F document=@"$1" "${BOT_BUILD_URL}" \
+		-F chat_id="${CHATID}" \
+		-F "disable_web_page_preview=true" \
+		-F "parse_mode=html" \
+		-F caption="$2"
+}
+
 tg_post_build() {
 	#Post MD5Checksum alongwith for easeness
 	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
@@ -77,14 +82,14 @@ tg_post_build() {
 		-F chat_id="${CHATID}" \
 		-F "disable_web_page_preview=true" \
 		-F "parse_mode=html" \
-		-F caption="$2 | <b>MD5 Checksum : </b><code>${MD5CHECK}</code>"
+		-F caption="$2 <b>MD5 Checksum : </b><code>${MD5CHECK}</code>"
 }
 
 ## Argument list
 for args in "${@}"; do
 	case "${args}" in
 	"--clang")
-		C_PATH="${TOOLCHAIN}/Neutron-Clang-BOLT"
+		C_PATH="${TOOLCHAIN}/clang-neutron"
 		KBUILD_COMPILER_STRING="$(${C_PATH}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
 		MAKE+=(
 			O=work
@@ -114,30 +119,6 @@ for args in "${@}"; do
 			CROSS_COMPILE_COMPAT=arm-eabi-
 			CC_COMPAT=arm-eabi-gcc
 		)
-		;;
-	"--newcam")
-		DFCF="vendor/${CODENAME}-perf_defconfig"
-		CAM='NEWCAM'
-		;;
-	"--oldcam")
-		DFCF="vendor/${CODENAME}-old-perf_defconfig"
-		CAM='OLDCAM'
-		;;
-	"--osscam")
-		DFCF="vendor/${CODENAME}-oss-perf_defconfig"
-		CAM='OSSCAM'
-		;;
-	"--qpnp")
-		HAPTIC='QPNP'
-		;;
-	"--qti")
-		HAPTIC='QTI'
-		;;
-	"--dynamic")
-		PARTITION='DYNAMIC'
-		;;
-	"--non-dynamic")
-		PARTITION='NON-DYNAMIC'
 		;;
 	"--thin-lto")
 		LTO_VARIANT='THIN_LTO'
@@ -190,8 +171,8 @@ BUILD_END="$(date +"%s")"
 DIFF="$((BUILD_END - BUILD_START))"
 
 ## Start zipping and posting
-if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image.gz-dtb" ]]; then
-	tg_post_build "log.txt" "Compiled kernel successfully!!"
+if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image" ]]; then
+	tg_post_log "log.txt" "Compiled kernel successfully!!"
 	source "${KERNEL_DIR}/work/.config"
 
 	KNAME="$(echo "${CONFIG_LOCALVERSION}" | cut -c 2-)"
@@ -199,30 +180,26 @@ if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image.gz-dtb" ]]; then
 	DATE="$(date +"%Y-%m-%d %H:%M")"
 	COMMIT_NAME="$(git show -s --format=%s)"
 	COMMIT_HASH="$(git rev-parse --short HEAD)"
-	if [[ $PARTITION == NON-DYNAMIC ]]; then
-		ZIP_NAME="${KNAME}-${CAM}-${HAPTIC}-${CODENAME2^^}-${CODENAME^^}-$(date +"%H%M")"
-	else
-		ZIP_NAME="${KNAME}-${CAM}-${HAPTIC}-${PARTITION}-${CODENAME2^^}-${CODENAME^^}-$(date +"%H%M")"
-	fi
+	
+	ZIP_NAME="${KNAME}-${CODENAME^^}-$(date +"%H%M")"
 	FINAL_ZIP="${ZIP_NAME}-signed.zip"
 
-	cp "${KERNEL_DIR}/work/arch/arm64/boot/Image.gz-dtb" "${ZIP_DIR}"
+	cp "${KERNEL_DIR}/work/arch/arm64/boot/Image" "${ZIP_DIR}"
+	cp "${KERNEL_DIR}/work/arch/arm64/boot/dtbo.img" "${ZIP_DIR}"
 	cd "${ZIP_DIR}" || exit 1
 	zip -r9 "${ZIP_NAME}.zip" * -x README.md LICENSE FUNDING.yml zipsigner*
 	java -jar zipsigner* "${ZIP_NAME}.zip" "${FINAL_ZIP}"
 	echo -e "\n${CYAN}	Pushing kernel zip...\n"
-	if [[ $PARTITION == NON-DYNAMIC ]]; then
-		tg_post_build "${FINAL_ZIP}" "${CAM}+${HAPTIC}"
-	else
-		tg_post_build "${FINAL_ZIP}" "${CAM}+${HAPTIC}+${PARTITION}"
-	fi
+
+	tg_post_build "${FINAL_ZIP}"
+
 	cp "${FINAL_ZIP}" "${KERNEL_DIR}/out"
-	rm -rf *.zip Image.gz-dtb
+	rm -rf *.zip Image dtbo.img
 	cd ${KERNEL_DIR}
 
 	# Print the build information
 	tg_post_msg "
-	=========Scarlet-X Kernel=========
+	=========Custom Kernel=========
 	Compiler: <code>${KBUILD_COMPILER_STRING}</code>
 	Linux Version: <code>${KV}</code>
 	Maintainer: <code>${USER}</code>
