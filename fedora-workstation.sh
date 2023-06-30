@@ -1,91 +1,113 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# Script to setup Fedora 37 Workstation
+# Script to setup Fedora 38 Workstation
 #
 # Usage:
 #        ./fedora-workstation.sh
 #
 
-cd $HOME
-
 # Enable RPM Fusion
-echo -e "Enabling RPM Fusion\n"
 sudo dnf install -y \
   https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
   https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
-# Add flatpak
+# Enable flatpak
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-# Install packages
-echo -e "Installing and updating dnf packages ...\n"
-sudo dnf install -y \
-    android-tools \
-    discord \
-    htop \
-    imwheel \
-    neofetch \
-    nload \
-    pavucontrol \
-    telegram-desktop \
-    tldr
-
-# docker
-sudo dnf remove -y docker \
-                   docker-client \
-                   docker-client-latest \
-                   docker-common \
-                   docker-latest \
-                   docker-latest-logrotate \
-                   docker-logrotate \
-                   docker-selinux \
-                   docker-engine-selinux \
-                   docker-engine
-
-sudo dnf -y install dnf-plugins-core
-sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo systemctl start docker
-
-# battop
-echo -e "\nInstalling battop..."
-wget https://github.com/svartalf/rust-battop/releases/download/v0.2.4/battop-v0.2.4-x86_64-unknown-linux-gnu -O battop
-sudo mv battop /usr/bin/
-sudo chmod +x /usr/bin/battop
+# Speed up dnf
+echo "max_parallel_downloads=5" | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+echo "fastestmirror=True" | sudo tee -a /etc/dnf/dnf.conf > /dev/null
+sudo dnf update --refresh
 
 # Multimedia plugins
-echo -e "\nInstalling multimedia plugins..."
 sudo dnf install -y gstreamer1-plugins-{bad-\*,good-\*,base} gstreamer1-plugin-openh264 gstreamer1-libav --exclude=gstreamer1-plugins-bad-free-devel
 sudo dnf install -y lame\* --exclude=lame-devel
 sudo dnf group upgrade -y --with-optional Multimedia
 
-# vscode
-echo -e "\nInstalling Visual Studio Code..."
-sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-cat <<EOF | sudo tee /etc/yum.repos.d/vscode.repo
-[code]
-name=Visual Studio Code
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
-sudo dnf check-update
-sudo dnf install -y code
+# Install packages
+sudo dnf update -y
+sudo dnf install -y \
+  dnf-plugins-core \
+  htop \
+  java-latest-openjdk-devel.x86_64 \
+  java-latest-openjdk.x86_64 \
+  neofetch \
+  nload \
+  pavucontrol \
+  tldr \
+  tmate
 
-# git-cli
-echo -e "\nInstalling git-cli..."
+flatpak install flathub -y \
+  com.anydesk.Anydesk \
+  com.discordapp.Discord \
+  com.github.IsmaelMartinez.teams_for_linux \
+  com.microsoft.EdgeDev \
+  de.haeckerfelix.Fragments \
+  im.riot.Riot \
+  io.github.celluloid_player.Celluloid \
+  org.telegram.desktop \
+  us.zoom.Zoom
+
+# battop
+wget https://github.com/svartalf/rust-battop/releases/download/v0.2.4/battop-v0.2.4-x86_64-unknown-linux-gnu -O battop
+sudo mv battop /usr/bin/
+sudo chmod +x /usr/bin/battop
+
+# docker
+sudo dnf remove -y \
+  docker \
+  docker-client \
+  docker-client-latest \
+  docker-common \
+  docker-latest \
+  docker-latest-logrotate \
+  docker-logrotate \
+  docker-selinux \
+  docker-engine-selinux \
+  docker-engine
+
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
+sudo dnf install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
+
+sudo usermod -aG docker $USER
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# git
 sudo dnf install 'dnf-command(config-manager)'
 sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 sudo dnf install -y gh
 
-# Platform tools
-echo -e "\nInstalling Android SDK platform tools..."
-wget -q https://dl.google.com/android/repository/platform-tools-latest-linux.zip
-unzip -qq platform-tools-latest-linux.zip
-rm platform-tools-latest-linux.zip
+if [[ $USER == "hridaya" ]]; then
+  git config --global user.email "info.hridayaprajapati@gmail.com"
+  git config --global user.name "hridaya"
+fi
 
-echo -e "\nSetting up android udev rules..."
+git config --global alias.cp 'cherry-pick'
+git config --global alias.c 'commit'
+git config --global alias.f 'fetch'
+git config --global alias.m 'merge'
+git config --global alias.rb 'rebase'
+git config --global alias.rs 'reset'
+git config --global alias.ck 'checkout'
+git config --global credential.helper 'cache --timeout=99999999'
+git config --global core.editor "nano"
+
+# libreoffice
+sudo dnf group remove -y libreoffice
+sudo dnf remove -y libreoffice-core
+
+flatpak install flathub -y org.libreoffice.LibreOffice
+
+# platform tools
+sudo dnf install -y android-tools
+
 git clone https://github.com/M0Rf30/android-udev-rules.git
 cd android-udev-rules
 sudo cp -v 51-android.rules /etc/udev/rules.d/51-android.rules
@@ -98,16 +120,11 @@ sudo systemctl restart systemd-udevd.service
 adb kill-server
 rm -rf android-udev-rules
 
-# Configure git
-echo -e "\nSetting up Git..."
+# vscode
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
 
-git config --global user.email "hridaya@pixelos.net"
-git config --global user.name "hridaya"
-git config --global credential.helper 'cache --timeout=99999999'
-git config --global core.editor "nano"
-
-# Optimize boot time, it takes the longest time while booting
-sudo systemctl disable NetworkManager-wait-online.service
+sudo dnf install -y code
 
 # Install fish shell
 echo -e "\nInstalling fish shell..."
