@@ -40,4 +40,4 @@ if __name__ == "__main__":
   else:
     print("Duplicate entries:", end="")
     for duplicate in duplicates:
-      print("  " + duplicate.replace("\n", "")
+      print("  " + duplicate.replace("\n", ""))
