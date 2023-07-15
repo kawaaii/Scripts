@@ -20,7 +20,7 @@ def find_duplicates(filename):
 
   for line in lines:
     line = line.strip()
-    if line in seen:
+    if line in seen and line != "\n":
       duplicates.append(line)
     else:
       seen.add(line)
@@ -40,4 +40,4 @@ if __name__ == "__main__":
   else:
     print("Duplicate entries:", end="")
     for duplicate in duplicates:
-      print("  " + duplicate, end="")
+      print("  " + duplicate.replace("\n", "")
