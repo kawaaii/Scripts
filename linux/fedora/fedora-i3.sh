@@ -20,7 +20,8 @@ sudo dnf install -y \
   telegram-desktop \
   google-roboto-mono-fonts \
   ripgrep \
-  git
+  git \
+  xclip
 
 # Enable flatpak
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
