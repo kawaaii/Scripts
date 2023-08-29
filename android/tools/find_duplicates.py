@@ -3,41 +3,50 @@
 import sys
 
 def find_duplicates(filename):
-  """Finds duplicate entries in a file.
+    """Finds duplicate entries in a file.
 
-  Args:
-    filename: The name of the file to search.
+    Args:
+        filename: The name of the file to search.
 
-  Returns:
-    A list of duplicate entries.
-  """
+    Returns:
+        A dictionary containing line numbers as keys and lists of duplicate entries as values.
+    """
 
-  with open(filename, "r") as f:
-    lines = f.readlines()
+    with open(filename, "r") as f:
+        lines = f.readlines()
 
-  seen = set()
-  duplicates = []
+    line_number_dict = {}
+    seen = set()
 
-  for line in lines:
-    line = line.strip()
-    if line in seen:
-      duplicates.append(line)
-    else:
-      seen.add(line)
+    for index, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
+        if line in seen:
+            if line:
+                if line in line_number_dict:
+                    line_number_dict[line].append(index + 1)
+                else:
+                    line_number_dict[line] = [index + 1]
+        else:
+            seen.add(line)
 
-  return duplicates
+    return line_number_dict
 
 if __name__ == "__main__":
-  if len(sys.argv) != 2:
-    print("Usage: python find_duplicates.py <filename>")
-    sys.exit(1)
+    if len(sys.argv) != 2:
+        print("Usage: python find_duplicates.py <filename>")
+        sys.exit(1)
 
-  filename = sys.argv[1]
-  duplicates = find_duplicates(filename)
+    filename = sys.argv[1]
+    line_number_dict = find_duplicates(filename)
 
-  if not duplicates:
-    print("No duplicate entries found.")
-  else:
-    print("Duplicate entries:", end="")
-    for duplicate in duplicates:
-      print("  " + duplicate, end="")
+    if not line_number_dict:
+        print("No duplicate entries found.")
+    else:
+        print("Duplicate entries:")
+        for line, line_numbers in line_number_dict.items():
+            if line:
+                print(f"Line: {', '.join(str(num) for num in line_numbers)} - Entry: {line}")
+            else:
+                print(f"Line: {', '.join(str(num) for num in line_numbers)} - Entry: <empty>")
