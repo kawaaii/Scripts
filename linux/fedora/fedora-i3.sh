@@ -8,6 +8,11 @@ sudo dnf install -y \
   https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
   https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
+# Add Sublime Text RPM
+# Install GPG key
+sudo rpm -v --import https://download.sublimetext.com/sublimehq-rpm-pub.gpg
+sudo dnf config-manager --add-repo https://download.sublimetext.com/rpm/stable/x86_64/sublime-text.repo
+
 # Install packages
 sudo dnf update -y
 sudo dnf install -y \
@@ -21,7 +26,8 @@ sudo dnf install -y \
   google-roboto-mono-fonts \
   ripgrep \
   git \
-  xclip
+  xclip \
+  sublime-text
 
 # Enable flatpak
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
