@@ -28,8 +28,6 @@ DFCF="gauguin_defconfig"
 # Paths
 KERNEL_DIR="${PWD}"
 TOOLCHAIN="${HOME}/toolchains"
-GZIP_DIR="${TOOLCHAIN}/neutron-gzip"
-COREUTILS_DIR="${TOOLCHAIN}/neutron-coreutils"
 ZIP_DIR="${HOME}/ak3"
 
 ## Go to kernel directory
@@ -150,7 +148,7 @@ done
 ## Export environment variables
 export KBUILD_BUILD_USER="${USER}"
 export KBUILD_BUILD_HOST="${HOST}"
-export PATH="${COREUTILS_DIR}/bin:${GZIP_DIR}/bin:${C_PATH}/bin:${PATH}"
+export PATH="${C_PATH}/bin:${PATH}"
 export ARCH='arm64'
 export PYTHON='python3'
 
