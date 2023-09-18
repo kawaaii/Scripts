@@ -91,7 +91,7 @@ for args in "${@}"; do
 		C_PATH="${TOOLCHAIN}/clang-neutron"
 		KBUILD_COMPILER_STRING="$(${C_PATH}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
 		MAKE+=(
-			O=work
+			O=../work
 			CC='ccache clang'
 			LLVM=1
 			LLVM_IAS=1
@@ -103,7 +103,7 @@ for args in "${@}"; do
 		C_PATH="${TOOLCHAIN}/gcc64/bin:${TOOLCHAIN}/gcc32"
 		KBUILD_COMPILER_STRING="$(${TOOLCHAIN}/gcc64/bin/aarch64-elf-gcc --version | head -n 1)"
 		MAKE+=(
-			O=work
+			O=../work
 			CC=aarch64-elf-gcc
 			LD="${TOOLCHAIN}/gcc64/bin/aarch64-elf-ld.lld"
 			LD_LIBRARY_PATH=${C_PATH}/lib:${LD_LIBRARY_PART}
@@ -158,37 +158,37 @@ export ARCH='arm64'
 export PYTHON='python3'
 
 ## Start compilation
-rm -rf "${KERNEL_DIR}/work" "${KERNEL_DIR}/log.txt"
-if [[ ! -d "${KERNEL_DIR}/out" ]]; then
-	mkdir "${KERNEL_DIR}/out"
+rm -rf "${KERNEL_DIR}/../work" "${KERNEL_DIR}/../log.txt"
+if [[ ! -d "${KERNEL_DIR}/../out" ]]; then
+	mkdir "${KERNEL_DIR}/../out"
 fi
 
 BUILD_START="$(date +"%s")"
 make -j"${PROCS}" "${DFCF}" "${MAKE[@]}"
 echo -e "\n${CYAN}	Build started..."
 echo -e "${GREEN}"
-time make -j"${PROCS}" "${MAKE[@]}" 2>&1 | tee log.txt
+time make -j"${PROCS}" "${MAKE[@]}" 2>&1 | tee ../log.txt
 git restore "${KERNEL_DIR}/arch/arm64/configs/${DFCF}"
 echo -e "\n${CYAN}	Build finished. Zipping...\n"
 BUILD_END="$(date +"%s")"
 DIFF="$((BUILD_END - BUILD_START))"
 
 ## Start zipping and posting
-if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image" ]]; then
-	tg_post_log "log.txt" "Compiled kernel successfully!!"
-	source "${KERNEL_DIR}/work/.config"
+if [[ -f "${KERNEL_DIR}/../work/arch/arm64/boot/Image" ]]; then
+	tg_post_log "../log.txt" "Compiled kernel successfully!!"
+	source "${KERNEL_DIR}/../work/.config"
 
 	KNAME="$(echo "${CONFIG_LOCALVERSION}" | cut -c 2-)"
-	KV="$(cat <"${KERNEL_DIR}/work/include/generated/utsrelease.h" | cut -c 21- | tr -d '"')"
+	KV="$(cat <"${KERNEL_DIR}/../work/include/generated/utsrelease.h" | cut -c 21- | tr -d '"')"
 	DATE="$(date +"%Y-%m-%d %H:%M")"
 	COMMIT_NAME="$(git show -s --format=%s)"
 	COMMIT_HASH="$(git rev-parse --short HEAD)"
-	
+
 	ZIP_NAME="${KNAME}-${CODENAME^^}-$(date +"%H%M")"
 	FINAL_ZIP="${ZIP_NAME}-signed.zip"
 
-	cp "${KERNEL_DIR}/work/arch/arm64/boot/Image" "${ZIP_DIR}"
-	cp "${KERNEL_DIR}/work/arch/arm64/boot/dtbo.img" "${ZIP_DIR}"
+	cp "${KERNEL_DIR}/../work/arch/arm64/boot/Image" "${ZIP_DIR}"
+	cp "${KERNEL_DIR}/../work/arch/arm64/boot/dtbo.img" "${ZIP_DIR}"
 	cd "${ZIP_DIR}" || exit 1
 	zip -r9 "${ZIP_NAME}.zip" * -x README.md LICENSE FUNDING.yml zipsigner*
 	java -jar zipsigner* "${ZIP_NAME}.zip" "${FINAL_ZIP}"
@@ -196,7 +196,7 @@ if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image" ]]; then
 
 	tg_post_build "${FINAL_ZIP}"
 
-	cp "${FINAL_ZIP}" "${KERNEL_DIR}/out"
+	cp "${FINAL_ZIP}" "${KERNEL_DIR}/../out"
 	rm -rf *.zip Image dtbo.img
 	cd ${KERNEL_DIR}
 
@@ -216,7 +216,7 @@ if [[ -f "${KERNEL_DIR}/work/arch/arm64/boot/Image" ]]; then
 	Last Commit Hash: <code>${COMMIT_HASH}</code>
 	"
 else
-	tg_post_build "log.txt" "Build failed!!"
+	tg_post_build "../log.txt" "Build failed!!"
 	echo -e "\n${RED}	Kernel image not found"
 	exit 1
 fi
