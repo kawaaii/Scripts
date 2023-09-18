@@ -134,8 +134,7 @@ for args in "${@}"; do
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -d 'CONFIG_LTO_CLANG_FULL'
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -e 'CONFIG_LTO_NONE'
 		;;
-	"release")
-		TOKEN='ADD YOUR TOKEN HERE'
+	"--release")
 		CHATID='ADD YOUR CHATID HERE'
 		;;
 	"--help")
