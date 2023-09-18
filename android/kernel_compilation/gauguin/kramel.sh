@@ -45,6 +45,7 @@ Arguments:
  --thin-lto		enables thin LTO
  --full-lto		enables full LTO
  --non-lto		disables LTO
+ --release		sends final zip to release channel/group
  --help			shows this menu
 "
 }
@@ -132,6 +133,10 @@ for args in "${@}"; do
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -d 'CONFIG_LTO_CLANG_THIN'
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -d 'CONFIG_LTO_CLANG_FULL'
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -e 'CONFIG_LTO_NONE'
+		;;
+	"release")
+		TOKEN='ADD YOUR TOKEN HERE'
+		CHATID='ADD YOUR CHATID HERE'
 		;;
 	"--help")
 		help
