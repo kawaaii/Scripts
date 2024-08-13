@@ -40,8 +40,6 @@ help() {
 Usage ./kramel.sh [ARG]
 
 Arguments:
- --clang		sets clang as the compiler
- --gcc			sets gcc as the compiler
  --thin-lto		enables thin LTO
  --full-lto		enables full LTO
  --non-lto		disables LTO
@@ -50,75 +48,45 @@ Arguments:
 "
 }
 
-# A function to send message(s) via Telegram's BOT api
-tg_post_msg() {
-	curl -s -X POST "${BOT_MSG_URL}" \
-		-d chat_id="${CHATID}" \
-		-d "disable_web_page_preview=true" \
-		-d "parse_mode=html" \
-		-d text="$1"
+# Generic function to send a message or file via Telegram's BOT API
+tg_post() {
+	local TYPE="$1"
+	local CONTENT="$2"
+	local CAPTION="$3"
+
+	if [[ "$TYPE" == "message" ]]; then
+		curl -s -X POST "${BOT_MSG_URL}" \
+			-d chat_id="${CHATID}" \
+			-d "disable_web_page_preview=true" \
+			-d "parse_mode=html" \
+			-d text="${CONTENT}"
+	elif [[ "$TYPE" == "file" ]]; then
+		local MD5CHECK=$(md5sum "${CONTENT}" | cut -d' ' -f1)
+		curl --progress-bar -F document=@"${CONTENT}" "${BOT_BUILD_URL}" \
+			-F chat_id="${CHATID}" \
+			-F "disable_web_page_preview=true" \
+			-F "parse_mode=html" \
+			-F caption="${CAPTION} <b>MD5 Checksum: </b><code>${MD5CHECK}</code>"
+	fi
 }
 
-# A function to send file(s) via Telegram's BOT api
-tg_post_log() {
-	#Post MD5Checksum alongwith for easeness
-	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
+# A function to send message(s) via Telegram's BOT API
+tg_post_msg() {
+	tg_post "message" "$1"
+}
 
-	#Show the Checksum alongwith caption
-	curl --progress-bar -F document=@"$1" "${BOT_BUILD_URL}" \
-		-F chat_id="${CHATID}" \
-		-F "disable_web_page_preview=true" \
-		-F "parse_mode=html" \
-		-F caption="$2"
+# A function to send file(s) via Telegram's BOT API
+tg_post_log() {
+	tg_post "file" "$1" "$2"
 }
 
 tg_post_build() {
-	#Post MD5Checksum alongwith for easeness
-	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
-
-	#Show the Checksum alongwith caption
-	curl --progress-bar -F document=@"$1" "${BOT_BUILD_URL}" \
-		-F chat_id="${CHATID}" \
-		-F "disable_web_page_preview=true" \
-		-F "parse_mode=html" \
-		-F caption="$2 <b>MD5 Checksum : </b><code>${MD5CHECK}</code>"
+	tg_post "file" "$1" "$2"
 }
 
 ## Argument list
 for args in "${@}"; do
 	case "${args}" in
-	"--clang")
-		C_PATH="${TOOLCHAIN}/clang-neutron"
-		KBUILD_COMPILER_STRING="$(${C_PATH}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
-		MAKE+=(
-			O=../work
-			CC='ccache clang'
-			LLVM=1
-			LLVM_IAS=1
-			CROSS_COMPILE=aarch64-linux-gnu-
-			CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-		)
-		;;
-	"--gcc")
-		C_PATH="${TOOLCHAIN}/gcc64/bin:${TOOLCHAIN}/gcc32"
-		KBUILD_COMPILER_STRING="$(${TOOLCHAIN}/gcc64/bin/aarch64-elf-gcc --version | head -n 1)"
-		MAKE+=(
-			O=../work
-			CC=aarch64-elf-gcc
-			LD="${TOOLCHAIN}/gcc64/bin/aarch64-elf-ld.lld"
-			LD_LIBRARY_PATH=${C_PATH}/lib:${LD_LIBRARY_PART}
-			AR=llvm-ar
-			NM=llvm-nm
-			OBJCOPY=llvm-objcopy
-			OBJDUMP=llvm-objdump
-			OBJCOPY=llvm-objcopy
-			OBJSIZE=llvm-size
-			STRIP=llvm-strip
-			CROSS_COMPILE=aarch64-elf-
-			CROSS_COMPILE_COMPAT=arm-eabi-
-			CC_COMPAT=arm-eabi-gcc
-		)
-		;;
 	"--thin-lto")
 		LTO_VARIANT='THIN_LTO'
 		./scripts/config --file "${KERNEL_DIR}/arch/arm64/configs/${DFCF}" -e 'CONFIG_LTO_CLANG_THIN'
@@ -142,7 +110,7 @@ for args in "${@}"; do
 		exit 0
 		;;
 	*)
-		echo -e "${YELLOW}Invaild argument(s) '${*}'. Run './kramel.sh --help'"
+		echo -e "${YELLOW}Invalid argument(s) '${*}'. Run './kramel.sh --help'"
 		sleep 1
 		exit 1
 		;;
@@ -152,9 +120,18 @@ done
 ## Export environment variables
 export KBUILD_BUILD_USER="${USER}"
 export KBUILD_BUILD_HOST="${HOST}"
-export PATH="${C_PATH}/bin:${PATH}"
+export PATH="${TOOLCHAIN}/clang-neutron/bin:${PATH}"
 export ARCH='arm64'
 export PYTHON='python3'
+
+## Set compiler to Clang
+KBUILD_COMPILER_STRING="$(${TOOLCHAIN}/clang-neutron/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
+MAKE+=(
+	O=../work
+	CC='ccache clang'
+	LLVM=1
+	LLVM_IAS=1
+)
 
 ## Start compilation
 rm -rf "${KERNEL_DIR}/../work" "${KERNEL_DIR}/../log.txt"
